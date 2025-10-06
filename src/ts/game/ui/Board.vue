@@ -39,10 +39,11 @@ function generateHexGrid(radius: number): HexCell[] {
 </script>
 
 <script setup lang="ts">
-const radius = 3
+const radius = 6
 const minSize = 35
 const maxSize = 110
 const sizeStep = 6
+const initialObstacleRatio = 0.14
 
 const cells = generateHexGrid(radius)
 const centerCell = cells.find((cell) => cell.q === 0 && cell.r === 0 && cell.s === 0) ?? cells[0]
@@ -106,17 +107,6 @@ function handleWheel(event: WheelEvent) {
   cellSize.value = clamp(cellSize.value + direction * sizeStep, minSize, maxSize)
 }
 
-function styleChunk(index: number) {
-  const position = layout.value.positions[index]
-
-  return {
-    width: `${hexWidth.value}px`,
-    height: `${hexHeight.value}px`,
-    left: `${position.left}px`,
-    top: `${position.top}px`
-  }
-}
-
 function getNeighbours(index: number) {
   const current = cells[index]
   const neighbours: number[] = []
@@ -132,8 +122,55 @@ function getNeighbours(index: number) {
   return neighbours
 }
 
+const catNeighbours = getNeighbours(centerCell.index)
+
+function styleChunk(index: number) {
+  const position = layout.value.positions[index]
+
+  return {
+    width: `${hexWidth.value}px`,
+    height: `${hexHeight.value}px`,
+    left: `${position.left}px`,
+    top: `${position.top}px`
+  }
+}
+
 function isBlocked(index: number) {
   return blocked.has(index)
+}
+
+function seedObstacles() {
+  const desiredObstacles = Math.max(8, Math.round(totalCells * initialObstacleRatio))
+  const availableIndices = cells
+    .map((cell) => cell.index)
+    .filter((index) => index !== centerCell.index)
+
+  while (blocked.size < desiredObstacles && availableIndices.length > 0) {
+    const pickIndex = Math.floor(Math.random() * availableIndices.length)
+    const candidate = availableIndices.splice(pickIndex, 1)[0]
+
+    if (catNeighbours.includes(candidate)) {
+      const blockedNeighbours = catNeighbours.filter((neighbour) => neighbour === candidate || blocked.has(neighbour))
+      if (blockedNeighbours.length >= catNeighbours.length - 1) {
+        continue
+      }
+    }
+
+    blocked.add(candidate)
+  }
+}
+
+function generateInitialObstacles() {
+  const maxAttempts = 20
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    blocked.clear()
+    seedObstacles()
+    if (bfsToEdge(centerCell.index)) {
+      return
+    }
+  }
+
+  // Fallback to the last attempt even if no escape route was found to avoid infinite loops
 }
 
 function bfsToEdge(startIndex: number) {
@@ -223,6 +260,7 @@ function resetGame() {
   blocked.clear()
   catIndex.value = centerCell.index
   gameState.value = 'playing'
+  generateInitialObstacles()
 }
 
 defineExpose({
@@ -230,6 +268,8 @@ defineExpose({
   gameState,
   cellSize
 })
+
+resetGame()
 </script>
 
 <template>
@@ -269,7 +309,7 @@ defineExpose({
   position: relative;
   width: 100%;
   height: 100%;
-  background: hsl(180, 3%, 41%);
+  background: radial-gradient(circle at top, hsl(200, 44%, 32%), hsl(210, 30%, 18%));
   overflow: hidden;
   user-select: none;
   display: flex;
@@ -319,8 +359,9 @@ defineExpose({
   align-items: center;
   justify-content: center;
   transform: translate(-50%, -50%);
-  background: hsl(0, 0%, 19%);
-  transition: background 0.2s ease, transform 0.2s ease;
+  background: hsl(168, 42%, 62%);
+  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.08);
+  transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
   clip-path: polygon(
     50% 0%,
     calc(50% + 43.301%) 25%,
@@ -333,15 +374,18 @@ defineExpose({
 }
 
 .chunk:hover {
-  background: hsl(0, 0%, 31%);
+  background: hsl(168, 52%, 72%);
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.4);
 }
 
 .chunk--blocked {
-  background: hsl(0, 0%, 8%);
+  background: hsl(8, 80%, 44%);
+  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.35);
 }
 
 .chunk--cat {
-  background: hsl(32, 100%, 50%);
+  background: hsl(47, 100%, 57%);
+  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.35);
 }
 
 .chunk--disabled {
