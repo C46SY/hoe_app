@@ -41,17 +41,30 @@ async function br3() {}
 
 <style scoped>
 .board {
-  width: 500px;
-  height: 500px;
-
-  border: 1px, solid, var(--line);
+  display: flex;
+  width: 100%;
+  height: 100%;
+  border: 1px solid var(--line);
   background: var(--bg-lv2);
 }
 
-.frame {
-  width: 800px;
-  height: 600px;
+:deep(.frame) {
+  width: 100vw;
+  height: 100vh;
+  left: 0 !important;
+  top: 0 !important;
   backdrop-filter: blur(10px);
   flex-direction: column;
+}
+
+:deep(.body) {
+  flex: 1;
+}
+
+:deep(.area) {
+  display: flex;
+  flex: 1;
+  align-items: stretch;
+  justify-content: stretch;
 }
 </style>
