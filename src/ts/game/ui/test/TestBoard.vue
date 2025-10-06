@@ -27,31 +27,53 @@ async function br3() {}
 </script>
 
 <template>
-  <NFrame v-on="props.frame!.eventObject" :title="'Board'" :left="options.left" :top="options.top">
+  <NFrame
+    class="test-board-frame"
+    v-on="props.frame!.eventObject"
+    :title="'Board'"
+    :left="options.left"
+    :top="options.top"
+  >
     <template #button>
       <button @click="br1()">空角色</button>
     </template>
     <template #ui>
-      <div class="board">
-        <Board ref="mr"></Board>
+      <div class="board-wrapper">
+        <div class="board">
+          <Board ref="mr"></Board>
+        </div>
       </div>
     </template>
   </NFrame>
 </template>
 
 <style scoped>
-.board {
-  width: 500px;
-  height: 500px;
+.board-wrapper {
+  width: 100%;
+  height: 100%;
+}
 
-  border: 1px, solid, var(--line);
+.board {
+  width: 100%;
+  height: 100%;
+
+  border: 1px solid var(--line);
   background: var(--bg-lv2);
 }
 
-.frame {
-  width: 800px;
-  height: 600px;
-  backdrop-filter: blur(10px);
-  flex-direction: column;
+:deep(.test-board-frame) {
+  width: 100vw;
+  height: 100vh;
+  left: 0 !important;
+  top: 0 !important;
+}
+
+:deep(.test-board-frame .body) {
+  height: calc(100% - var(--title-text));
+}
+
+:deep(.test-board-frame .area) {
+  align-items: stretch;
+  justify-content: stretch;
 }
 </style>
